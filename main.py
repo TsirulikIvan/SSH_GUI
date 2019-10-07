@@ -7,16 +7,11 @@ class mywindow(QtWidgets.QMainWindow):
         super(mywindow, self).__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.Load_PC()
-        self.model = QStandardItemModel(self.ui.listView)
+        #self.model = QStandardItemModel(self.ui.listView)
         self.client = paramiko.SSHClient()
         self.port = 22
         self.host = None
         self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        self.ui.action_2.triggered.connect(self.Add_New_PC)
-        self.ui.action_4.triggered.connect(self.Change_port)
-        self.ui.pushButton_5.clicked.connect(self.Connect_2_PC)
-        self.ui.comboBox.activated[str].connect(self.On_Activated)
 
 
     def Add_New_PC(self):
@@ -46,7 +41,7 @@ class mywindow(QtWidgets.QMainWindow):
             print("Can`t connect! " + str(err))
 
     def On_Activated(self, text):
-        self.host = text[-14::]
+        self.host = text[-15::]
         print(self.host)
         print(self.ui.lineEdit_2.text())
         print(self.ui.lineEdit_3.text())
@@ -58,24 +53,31 @@ class mywindow(QtWidgets.QMainWindow):
             self.port = text
             print(self.port)
 
-def Testing_local_network():
-    client = paramiko.SSHClient()
-    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    file = open('computers.txt', 'r')
-    for line in file:
-        ip = line[-14::]
-        print('Computer number {}'.format(ip))
-        try:
-            client.connect(hostname=ip, username="leninadm",
-            password="12345", port=22)
-        except Exception as err:
-            print("Can`t connect! " + str(err))
-        finally:
-            client.close()
+    def Testing_local_network(self):
+        client = paramiko.SSHClient()
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        n = 0
+        for i in range(31,39):
+            ip = '192.168.88.' + str(i)
+            number_pc = str(i - 30)
+            line = 'Computer number {0} ip {1} \n'.format(number_pc, ip)
+            print(line)
+            self.ui.comboBox.addItem(line)
+            #passw = input('Enter pass\n')
+            try:
+                client.connect(hostname=ip, username="leninadm",
+                password="liblen19", port=22)
+                stdin, stdout, stderr = client.exec_command('ifconfig')
+                data = stdout.read() + stderr.read()
+                print(data.decode('utf-8'))
+            except Exception as err:
+                print("Can`t connect! " + str(err) + '\n')
+            finally:
+                client.close()
+            print("--------------------------------------\n")
 
 
 if __name__ == "__main__":
-    Testing_local_network()
     app = QtWidgets.QApplication([])
     application = mywindow()
     application.show()
