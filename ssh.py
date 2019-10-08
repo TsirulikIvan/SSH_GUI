@@ -79,7 +79,6 @@ class Ui_MainWindow(object):
         self.lineEdit.setGeometry(QtCore.QRect(720, 350, 251, 20))
         self.lineEdit.setObjectName("lineEdit")
         self.logger_list = QtWidgets.QListWidget(self.centralwidget)
-        self.logger_list.setEnabled(False)
         self.logger_list.setGeometry(QtCore.QRect(10, 330, 681, 241))
         self.logger_list.setMovement(QtWidgets.QListView.Free)
         self.logger_list.setProperty("isWrapping", False)

@@ -1,4 +1,5 @@
 from PyQt5 import QtWidgets
+from PyQt5.QtCore import Qt
 from ssh import Ui_MainWindow  # импорт нашего сгенерированного файла
 import sys, os, paramiko, re
 
@@ -7,11 +8,22 @@ class mywindow(QtWidgets.QMainWindow):
         super(mywindow, self).__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        #self.model = QStandardItemModel(self.ui.listView)
-        self.client = paramiko.SSHClient()
-        self.port = 22
+        self.client = None
+        self.port = 738
         self.host = None
+        self.Create_client()
+        self.ui.connect_btn.clicked.connect(self.Connect_2_PC)
+        self.ui.pc_lists_box.activated[str].connect(self.On_Activated)
+        self.ui.deafult_settings_check.stateChanged.connect(self.Locking_lines)
+
+    def Adding_msg(self, text):
+        self.ui.logger_list.addItem(text)
+
+    def Create_client(self):
+        self.client = paramiko.SSHClient()
         self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        return 0
+
 
 
     def Add_New_PC(self):
@@ -34,17 +46,19 @@ class mywindow(QtWidgets.QMainWindow):
         file.close()
 
     def Connect_2_PC(self):
+        self.Adding_msg("Connecting to " + self.host)
         try:
-            self.client.connect(hostname=self.host, username=self.ui.lineEdit_2.text,
-        password=self.ui.lineEdit_3.text, port=self.port)
+            self.client.connect(hostname=self.host, username=self.ui.username_line.text,
+        password=self.ui.password_line.text, port=self.port)
         except Exception as err:
-            print("Can`t connect! " + str(err))
+            self.Adding_msg("Can`t connect!")
+            strng = str(err)
+            print(type(strng))
+            print(strng)
+            self.Adding_msg(strng)
 
     def On_Activated(self, text):
-        self.host = text[-15::]
-        print(self.host)
-        print(self.ui.lineEdit_2.text())
-        print(self.ui.lineEdit_3.text())
+        self.host = text[-13::]
 
     def Change_port(self):
         text, ok = QtWidgets.QInputDialog.getText(self, 'Смена порта',
@@ -63,7 +77,6 @@ class mywindow(QtWidgets.QMainWindow):
             line = 'Computer number {0} ip {1} \n'.format(number_pc, ip)
             print(line)
             self.ui.comboBox.addItem(line)
-            #passw = input('Enter pass\n')
             try:
                 client.connect(hostname=ip, username="leninadm",
                 password="liblen19", port=22)
@@ -75,6 +88,23 @@ class mywindow(QtWidgets.QMainWindow):
             finally:
                 client.close()
             print("--------------------------------------\n")
+
+    def Locking_lines(self, state):
+        if state != Qt.Checked:
+            self.ui.username_line.setEnabled(True)
+            self.ui.password_line.setEnabled(True)
+        else:
+            self.ui.username_line.setEnabled(False)
+            self.ui.password_line.setEnabled(False)
+
+    def closeEvent(self, event):
+        reply = QtWidgets.QMessageBox.question(self, 'Сообщение',
+            "Вы действительно хотите выйти?", QtWidgets.QMessageBox.Yes |
+            QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No)
+        if reply == QtWidgets.QMessageBox.Yes:
+            event.accept()
+        else:
+            event.ignore()
 
 
 if __name__ == "__main__":
