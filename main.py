@@ -1,7 +1,22 @@
+#sudo visudo
+#leninadm ALL=(ALL) NOPASSWD: ALL
+
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt
 from ssh import Ui_MainWindow  # импорт нашего сгенерированного файла
 import sys, os, paramiko, re
+
+def logging_time(data):
+    res = {}
+    for line in data:
+        string = line.split(' ')
+        tmp = []
+        for item in string:
+            if item != '':
+                tmp.append(item)
+        print(tmp)
+        res.update([(tmp[0], tmp[3])])
+    return res
 
 class mywindow(QtWidgets.QMainWindow):
     def __init__(self):
@@ -13,8 +28,39 @@ class mywindow(QtWidgets.QMainWindow):
         self.host = None
         self.Create_client()
         self.ui.connect_btn.clicked.connect(self.Connect_2_PC)
+        self.ui.cmd_btn.clicked.connect(self.Send_command)
+        self.ui.off_btn.clicked.connect(self.Off_PC)
+        self.ui.reboot_rtn.clicked.connect(self.Reboot_PC)
         self.ui.pc_lists_box.activated[str].connect(self.On_Activated)
         self.ui.deafult_settings_check.stateChanged.connect(self.Locking_lines)
+
+
+    def Off_PC(self):
+        try:
+            stdin, stdout, stderr = self.client.exec_command('sudo shutdown')
+            self.Adding_msg('Компьютер пользователя выключен!')
+            data = stdout.read() + stderr.read()
+            data = data.decode('utf-8')
+            print(data)
+        except Exception as err:
+            self.Adding_msg(str(err))
+
+    def Reboot_PC(self):
+        try:
+            stdin, stdout, stderr = self.client.exec_command('sudo reboot')
+            self.Adding_msg('Компьютер пользователя перезагружается!')
+            data = stdout.read() + stderr.read()
+            data = data.decode('utf-8')
+            print(data)
+        except Exception as err:
+            self.Adding_msg(str(err))
+
+
+    def Send_command(self):
+        stdin, stdout, stderr = self.client.exec_command(self.ui.command_line.text())
+        data = stdout.read() + stderr.read()
+        self.Adding_msg(data.decode('utf-8'))
+        print(data)
 
     def Adding_msg(self, text):
         self.ui.logger_list.addItem(text)
@@ -48,14 +94,20 @@ class mywindow(QtWidgets.QMainWindow):
     def Connect_2_PC(self):
         self.Adding_msg("Connecting to " + self.host)
         try:
-            self.client.connect(hostname=self.host, username=self.ui.username_line.text,
-        password=self.ui.password_line.text, port=self.port)
+            self.client.connect(hostname=self.host, username=self.ui.username_line.text(),
+        password=self.ui.password_line.text(), port=self.port)
+            self.ui.local_ip_lbl.setText('Локальный IP: ' + self.host)
+            self.ui.pc_num_lbl.setText('№ ' + self.host[-1::])
+            stdin, stdout, stderr = self.client.exec_command('w | grep guest')
+            data = stdout.read() + stderr.read()
+            data = data.decode('utf-8')
+            print(data)
+            self.Adding_msg(data)
         except Exception as err:
             self.Adding_msg("Can`t connect!")
             strng = str(err)
-            print(type(strng))
-            print(strng)
             self.Adding_msg(strng)
+
 
     def On_Activated(self, text):
         self.host = text[-13::]
@@ -105,6 +157,7 @@ class mywindow(QtWidgets.QMainWindow):
             event.accept()
         else:
             event.ignore()
+
 
 
 if __name__ == "__main__":
